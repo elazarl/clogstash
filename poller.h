@@ -8,6 +8,7 @@ struct poll_cb {
     int fd;
     int (*write)(struct poll_cb *);
     int (*read)(struct poll_cb *);
+    int (*cleanup)(struct poll_cb *);
     void *data;
 };
 
@@ -41,5 +42,16 @@ void poller_delete(struct poller *p);
  * poller_add adds an fd to poll to poller instance
  */
 void poller_add(struct poller *p, struct poll_cb cb);
+
+/**
+ * poller_disable will not poll for events for the given fd.
+ */
+void poller_disable(struct poller *p, int fd);
+
+/**
+ * poller_enable will start polling for events for the given fd,
+ * relevant if this fd was disabled.
+ */
+void poller_enable(struct poller *p, int fd);
 
 #endif

@@ -25,15 +25,20 @@ int poller_poll(struct poller *p, int ms) {
 	short anyleft = 0;
 	for (i = 0; i < p->n; i++) {
 		if (p->pollfds[i].revents & POLLOUT) {
-			if (p->cbs[i].write(&p->cbs[i]) == POLLER_DEL) {
+            p->cbs[i].write(&p->cbs[i]);
+			if (p->cbs[i].write == NULL) {
 				p->pollfds[i].events &= ~((short)POLLOUT);
 			}
 		}
 		if (p->pollfds[i].revents & POLLIN) {
-			if (p->cbs[i].read(&p->cbs[i]) == POLLER_DEL) {
+            p->cbs[i].read(&p->cbs[i]);
+			if (p->cbs[i].read == NULL) {
 				p->pollfds[i].events &= ~((short)POLLIN);
 			}
 		}
+        if (p->cbs[i].write == NULL && p->cbs[i].read == NULL && p->cbs[i].cleanup != NULL) {
+            p->cbs[i].cleanup(&p->cbs[i]);
+        }
 		anyleft |= p->pollfds[i].events;
 	}
 	return anyleft != 0;
@@ -53,18 +58,46 @@ struct poller *poller_new(int maxsize) {
     return p;
 }
 
+static int poller_search(struct poller *p, int fd) {
+    int i;
+    for (i=0; i < p->n; i++) {
+        if (p->cbs[i].fd == fd) {
+            return i;
+        }
+    }
+    panicf("Searched for nonexistant fd %d in poller", fd);
+    return -1;
+}
+
+void poller_disable(struct poller *p, int fd) {
+    int i = poller_search(p, fd);
+    p->pollfds[i].events = 0;
+}
+
+static void update_cb(struct poller *p, int i) {
+    if (p->cbs[i].read != NULL) {
+        p->pollfds[i].events |= POLLIN;
+    }
+    if (p->cbs[i].write != NULL) {
+        p->pollfds[i].events |= POLLOUT;
+    }
+}
+
+void poller_enable(struct poller *p, int fd) {
+    int i = poller_search(p, fd);
+    update_cb(p, i);
+}
+
+static const struct pollfd emptypollfd;
+
 void poller_add(struct poller *p, struct poll_cb cb) {
     if (p->n == p->max) {
         panicf("poller_add >max, %d > %d", p->n, p->max);
     }
     p->cbs[p->n] = cb;
+    p->pollfds[p->n] = emptypollfd;
     p->pollfds[p->n].fd = cb.fd;
-    if (cb.read != NULL) {
-        p->pollfds[p->n].events |= POLLIN;
-    }
-    if (cb.write != NULL) {
-        p->pollfds[p->n].events |= POLLOUT;
-    }
+    update_cb(p, p->n);
     p->n++;
 }
 

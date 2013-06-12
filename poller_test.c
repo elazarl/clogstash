@@ -20,30 +20,36 @@ struct writepoller {
 int mylistener_read(struct poll_cb *cb) {
     struct readpoller *l = cb->data;
     int nr = read(cb->fd, l->b + l->read, 100-l->read);
-    if (nr < 0) perrpanic("readpoller");
+    if (nr < 0) {
+        return nr;
+    }
     if (nr == 0) {
         close(cb->fd);
-        return POLLER_DEL;
+        cb->read = NULL;
+        return nr;
     }
     l->read += nr;
-    return POLLER_KEEP;
+    return nr;
 }
 
 int mylistener_write(struct poll_cb *cb) {
     struct writepoller *l = cb->data;
     int writesize = l->maxw - l->written;
-    int rc;
+    int nr;
     if (writesize > l->chunksize) {
         writesize = l->chunksize;
     }
-    rc = write(cb->fd, &l->w[l->written], writesize);
-    if (rc == -1) perror("write");
-    l->written += rc;
+    nr = write(cb->fd, &l->w[l->written], writesize);
+    if (nr == -1) {
+        return nr;
+    }
+    l->written += nr;
     if (l->written == l->maxw) {
         close(cb->fd);
-        return POLLER_DEL;
+        cb->write = NULL;
+        return nr;
     }
-    return POLLER_KEEP;
+    return nr;
 }
 
 static const struct readpoller emptyreadpoller;
