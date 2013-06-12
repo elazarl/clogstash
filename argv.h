@@ -11,7 +11,7 @@ typedef struct {
 /**
  * parses argument lists.
  * Given
- *     argv_t args[] = { {"--input", ""}, {"--nice", "default"}, NULL };
+ *     argv_t args[] = { {"--input", ""}, {"--nice", "default"}, ARGV_T_END };
  * it will fill `args` according to input arguments;
  *     char *argv[] = {"--input", "file1", "--nice", "1"};
  *     argv_parse(4, argv, args);
