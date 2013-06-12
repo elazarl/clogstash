@@ -3,9 +3,10 @@
 #include <strings.h>
 
 #include "argv.h"
+#include "panic.h"
 
 int argv_parse(int argc, char **argv, argv_t *args) {
-	int i = 0;
+	int i = 1;
 	while (i < argc) {
 		argv_t *p = args;
 		for (; p->arg != NULL; p++) {
@@ -16,16 +17,14 @@ int argv_parse(int argc, char **argv, argv_t *args) {
 			}
 		}
 		if (p->arg == NULL) {
-			fprintf(stderr, "Unexpected argument %s\n", argv[i]);
-			return 0;
+			panicf("Unexpected argument %s\n", argv[i]);
 		}
 		i++;
 	}
 	for (; args->arg != NULL; args++) {
 		int has_null = 0;
 		if (args->val == NULL) {
-			fprintf(stderr, "required argument not given: %s\n", args->arg);
-			has_null = 1;
+			panicf("required argument not given: %s\n", args->arg);
 		}
 		if (has_null) {
 			return 0;

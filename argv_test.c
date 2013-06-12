@@ -11,10 +11,9 @@ void argv_test() {
 	ok1(argv_get(args, "--test1") == NULL);
 
 	if (1) {
-		char *missing_argv[] = {"--test", "b"};
-		char *argv[] = {"--test", "a", "--null", "hopa"};
-		ok(!argv_parse(2, missing_argv, args), "missing null argument");
-		ok(argv_parse(4, argv, args), "all required arguments set");
+		/* TODO: find a way to test panics */
+		char *argv[] = {"./a.out", "--test", "a", "--null", "hopa"};
+		ok(argv_parse(5, argv, args), "all required arguments set");
 		ok1(strcmp(argv_get(args, "--test"), "a") == 0);
 	}
 }

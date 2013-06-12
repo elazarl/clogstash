@@ -19,4 +19,5 @@ void panicf(char *fmt, ...) {
     vfprintf(stderr, fmt, ap);
     fputs("", stderr);
     va_end(ap);
+    exit(1);
 }
