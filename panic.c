@@ -1,23 +1,41 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <errno.h>
 #include "panic.h"
 
+void (*onpanic)(char *msg) = NULL;
+
+static void dopanic(char *msg) {
+    if (onpanic != NULL) {
+        onpanic(msg);
+    } else {
+        fputs(msg, stderr);
+        fflush(stderr);
+        exit(1);
+    }
+}
+
+#define BUFSZ 1000
 void perrpanic(char *msg) {
-    perror(msg);
-    exit(1);
+    char panicbuf[BUFSZ];
+    snprintf(panicbuf, BUFSZ -1, "%s: %s", msg, strerror(errno));
+    panicbuf[BUFSZ-1] = '\0';
+    dopanic(panicbuf);
 }
 
 void panic(char *msg) {
-    fputs(msg, stderr);
-    exit(1);
+    dopanic(msg);
 }
 
 void panicf(char *fmt, ...) {
+    /* TODO: consider making thread local */
+    char panicbuf[BUFSZ];
     va_list ap;
     va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    fputs("", stderr);
+    vsnprintf(panicbuf, BUFSZ, fmt, ap);
     va_end(ap);
-    exit(1);
+    panicbuf[BUFSZ-1] = '\0';
+    dopanic(panicbuf);
 }

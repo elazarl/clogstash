@@ -16,4 +16,9 @@ void panicf(char *msg, ...);
  */
 void perrpanic(char *msg);
 
+/** 
+ * if onpanic is set, panic will call that instead of usual panic logic
+ */
+extern void (*onpanic)(char *msg);
+
 #endif

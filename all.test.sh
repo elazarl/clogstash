@@ -38,6 +38,6 @@ if [ "$BASENAME" != "all.test.sh" ]; then
 	RUNWITH=${BASENAME%%.test.sh}
 	RUNWITH=${RUNWITH//__/ }
 fi
-$RUNWITH ./_test_main.out $@ || exit -1
+$RUNWITH ./_test_main.out $@ || (echo TEST FAILED;exit -1)
 rm _test_main.out
 rm _main_test.c
