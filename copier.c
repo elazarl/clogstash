@@ -8,9 +8,6 @@
 #include "panic.h"
 #include "poller.h"
 
-// TODEL:
-#include <stdio.h>
-
 int buf_read(int fd, struct buf b) {
     return read(fd, b.buf, b.len);
 }
@@ -72,7 +69,6 @@ int copier_read(struct poll_cb *cb) {
     }
     poller_enable(c->p, c->sourcesink.sink);
     nr = buf_read(cb->fd, c->reader);
-    printf("%d read %d\n", cb->fd, nr);
     if (nr < 0) {
         perrpanic("copier_read");
         return nr;
@@ -90,7 +86,6 @@ int copier_write(struct poll_cb *cb) {
     struct copier *c = (struct copier *)cb->data;
     int nr;
     if (buf_empty(c->writer)) {
-        printf("buf empty\n");
         struct buf tmp;
         c->writer = buf_slice_to(c->raw_reader, c->raw_reader.len - c->reader.len);
         c->reader = c->raw_writer;
@@ -99,14 +94,15 @@ int copier_write(struct poll_cb *cb) {
         c->raw_writer = tmp;
     }
     if (buf_empty(c->writer)) {
-        cb->write = NULL;
-        if (!c->closing) {
+        if (c->closing) {
+            cb->write = NULL;
+        } else {
+            poller_disable(c->p, c->sourcesink.sink);
             poller_enable(c->p, c->sourcesink.source);
         }
         return 0;
     }
     nr = buf_write(cb->fd, c->writer);
-    printf("%d: written %d\n", cb->fd, nr);
     if (nr < 0) {
         perrpanic("copier_write");
         return nr;

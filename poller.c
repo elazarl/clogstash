@@ -39,8 +39,10 @@ int poller_poll(struct poller *p, int ms) {
         if (p->cbs[i].write == NULL && p->cbs[i].read == NULL && p->cbs[i].cleanup != NULL) {
             p->cbs[i].cleanup(&p->cbs[i]);
         }
-		anyleft |= p->pollfds[i].events;
 	}
+    for (i = 0; i < p->n; i++) {
+		anyleft |= p->pollfds[i].events;
+    }
 	return anyleft != 0;
 }
 
