@@ -8,6 +8,9 @@
 #include "panic.h"
 #include "poller.h"
 
+// TODEL:
+#include <stdio.h>
+
 int buf_read(int fd, struct buf b) {
     return read(fd, b.buf, b.len);
 }
@@ -56,6 +59,7 @@ int copier_delete(struct poll_cb *cb) {
     struct copier *c = (struct copier *)cb->data;
     free(c->raw_reader.buf);
     free(c->raw_writer.buf);
+    free(c);
     return 0;
 }
 
@@ -63,11 +67,19 @@ int copier_read(struct poll_cb *cb) {
     struct copier *c = (struct copier *)cb->data;
     int nr = 0;
     if (buf_empty(c->reader)) {
-        cb->read = NULL;
+        poller_disable(c->p, c->sourcesink.source);
         return nr;
     }
+    poller_enable(c->p, c->sourcesink.sink);
     nr = buf_read(cb->fd, c->reader);
+    printf("%d read %d\n", cb->fd, nr);
     if (nr < 0) {
+        perrpanic("copier_read");
+        return nr;
+    }
+    if (nr == 0) {
+        cb->read = NULL;
+        c->closing = 1;
         return nr;
     }
     c->reader = buf_slice_from(c->reader, nr);
@@ -77,11 +89,8 @@ int copier_read(struct poll_cb *cb) {
 int copier_write(struct poll_cb *cb) {
     struct copier *c = (struct copier *)cb->data;
     int nr;
-    if (buf_empty(c->reader) && buf_empty(c->writer)) {
-        cb->write = NULL;
-        return 0;
-    }
     if (buf_empty(c->writer)) {
+        printf("buf empty\n");
         struct buf tmp;
         c->writer = buf_slice_to(c->raw_reader, c->raw_reader.len - c->reader.len);
         c->reader = c->raw_writer;
@@ -89,11 +98,20 @@ int copier_write(struct poll_cb *cb) {
         c->raw_reader = c->raw_writer;
         c->raw_writer = tmp;
     }
-    nr = buf_read(cb->fd, c->reader);
+    if (buf_empty(c->writer)) {
+        cb->write = NULL;
+        if (!c->closing) {
+            poller_enable(c->p, c->sourcesink.source);
+        }
+        return 0;
+    }
+    nr = buf_write(cb->fd, c->writer);
+    printf("%d: written %d\n", cb->fd, nr);
     if (nr < 0) {
+        perrpanic("copier_write");
         return nr;
     }
-    c->reader = buf_slice_from(c->reader, nr);
+    c->writer = buf_slice_from(c->writer, nr);
     return nr;
 }
 
@@ -104,15 +122,18 @@ struct copier copier_add(struct poller *p, struct sourcesinkfds fds, int bufsize
     struct poll_cb writercb = poll_cb_new();
     struct copier *pc = malloc(sizeof(*pc));
     struct copier c = { p, fds, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
-        buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize) };
+        buf_wrap(buf1, bufsize), buf_wrap(buf2, 0), 0 };
     *pc = c;
     readercb.data = pc;
     readercb.fd = fds.source;
     readercb.read = copier_read;
+    writercb.fd = fds.sink;
     writercb.data = pc;
     writercb.write = copier_write;
     writercb.cleanup = copier_delete;
-    
+
     poller_add(p, readercb);
+    poller_add(p, writercb);
+    poller_disable(p, fds.sink);
     return c;
 }

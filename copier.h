@@ -20,6 +20,7 @@ struct copier {
 
     struct buf reader;
     struct buf writer;
+    int closing;
 };
 
 /**
