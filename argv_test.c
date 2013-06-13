@@ -32,4 +32,5 @@ void argv_test() {
         }
         ok(hadpanic, "missing argument did not panic");
     }
+    onpanic = NULL;
 }
