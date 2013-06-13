@@ -12,6 +12,7 @@ static void dopanic(char *msg) {
         onpanic(msg);
     } else {
         fputs(msg, stderr);
+        fputs("\n", stderr);
         fflush(stderr);
         exit(1);
     }
