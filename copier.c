@@ -112,12 +112,16 @@ int copier_write(struct poll_cb *cb) {
 }
 
 struct copier copier_add(struct poller *p, struct sourcesinkfds fds, int bufsize) {
+    return copier_add_f(p, fds, bufsize, buf_read, buf_write);
+}
+
+struct copier copier_add_f(struct poller *p, struct sourcesinkfds fds, int bufsize, buf_reader br, buf_writer bw) {
     unsigned char *buf1 = malloc(bufsize);
     unsigned char *buf2 = malloc(bufsize);
     struct poll_cb readercb = poll_cb_new();
     struct poll_cb writercb = poll_cb_new();
     struct copier *pc = malloc(sizeof(*pc));
-    struct copier c = { p, fds, buf_read, buf_write, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
+    struct copier c = { p, fds, br, bw, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
         buf_wrap(buf1, bufsize), buf_wrap(buf2, 0), 0 };
     *pc = c;
     readercb.data = pc;

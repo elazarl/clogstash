@@ -27,6 +27,15 @@ struct copier {
 };
 
 /**
+ * A buf_writer is a function that writes to struct buf b
+ */
+typedef int (*buf_writer)(int fd, struct buf b);
+/**
+ * A buf_readr is a function that reads from struct buf b
+ */
+typedef int (*buf_reader)(int fd, struct buf b);
+
+/**
  * reads from fd to buffer, returns number of bytes read or -1 on error.
  */
 int buf_read(int fd, struct buf b);
@@ -47,5 +56,11 @@ struct sourcesinkfds sourcesink(int source, int sink);
  * copier_add adds to poller p functions that copies all data from fds.source to fds.sink
  */
 struct copier copier_add(struct poller *p, struct sourcesinkfds fds, int bufsize);
+
+/**
+ * copier_add_f adds to poller p functions that copies all data from fds.source to fds.sink,
+ * the read and write functions to be used on the fd are br and bw respectively.
+ */
+struct copier copier_add_f(struct poller *p, struct sourcesinkfds fds, int bufsize, buf_reader br, buf_writer bw);
 
 #endif
