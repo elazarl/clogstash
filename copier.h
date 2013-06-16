@@ -15,6 +15,9 @@ struct copier {
     struct poller *p;
     struct sourcesinkfds sourcesink;
 
+    int (*buf_read)(int fd, struct buf b);
+    int (*buf_write)(int fd, struct buf b);
+
     struct buf raw_reader;
     struct buf raw_writer;
 

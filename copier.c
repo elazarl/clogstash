@@ -117,7 +117,7 @@ struct copier copier_add(struct poller *p, struct sourcesinkfds fds, int bufsize
     struct poll_cb readercb = poll_cb_new();
     struct poll_cb writercb = poll_cb_new();
     struct copier *pc = malloc(sizeof(*pc));
-    struct copier c = { p, fds, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
+    struct copier c = { p, fds, buf_read, buf_write, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
         buf_wrap(buf1, bufsize), buf_wrap(buf2, 0), 0 };
     *pc = c;
     readercb.data = pc;
