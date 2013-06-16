@@ -4,6 +4,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#include "helpers.h"
 #include "copier.h"
 #include "panic.h"
 #include "poller.h"
@@ -111,17 +112,24 @@ int copier_write(struct poll_cb *cb) {
     return nr;
 }
 
-struct copier copier_add(struct poller *p, struct sourcesinkfds fds, int bufsize) {
-    return copier_add_f(p, fds, bufsize, buf_read, buf_write);
+static int copier_simple_reader(void *UNUSED(ctx), int fd, struct buf b) {
+    return buf_read(fd, b);
+}
+static int copier_simple_writer(void *UNUSED(ctx), int fd, struct buf b) {
+    return buf_write(fd, b);
 }
 
-struct copier copier_add_f(struct poller *p, struct sourcesinkfds fds, int bufsize, buf_reader br, buf_writer bw) {
+struct copier copier_add(struct poller *p, struct sourcesinkfds fds, int bufsize) {
+    return copier_add_f(p, fds, bufsize, copier_simple_reader, copier_simple_writer);
+}
+
+struct copier copier_add_f(struct poller *p, struct sourcesinkfds fds, int bufsize, copier_reader cr, copier_writer cw) {
     unsigned char *buf1 = malloc(bufsize);
     unsigned char *buf2 = malloc(bufsize);
     struct poll_cb readercb = poll_cb_new();
     struct poll_cb writercb = poll_cb_new();
     struct copier *pc = malloc(sizeof(*pc));
-    struct copier c = { p, fds, br, bw, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
+    struct copier c = { p, fds, cr, cw, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
         buf_wrap(buf1, bufsize), buf_wrap(buf2, 0), 0 };
     *pc = c;
     readercb.data = pc;
