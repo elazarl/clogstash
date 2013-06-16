@@ -24,6 +24,7 @@ struct copier {
     struct poller *p;
     struct sourcesinkfds sourcesink;
 
+    void *ctx;
     copier_reader cr;
     copier_writer cw;
 
@@ -61,6 +62,6 @@ struct copier copier_add(struct poller *p, struct sourcesinkfds fds, int bufsize
  * copier_add_f adds to poller p functions that copies all data from fds.source to fds.sink,
  * the read and write functions to be used on the fd are br and bw respectively.
  */
-struct copier copier_add_f(struct poller *p, struct sourcesinkfds fds, int bufsize, copier_reader br, copier_writer bw);
+struct copier copier_add_f(struct poller *p, struct sourcesinkfds fds, int bufsize, void *ctx, copier_reader br, copier_writer bw);
 
 #endif

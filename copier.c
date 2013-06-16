@@ -69,7 +69,7 @@ int copier_read(struct poll_cb *cb) {
         return nr;
     }
     poller_enable(c->p, c->sourcesink.sink);
-    nr = buf_read(cb->fd, c->reader);
+    nr = c->cr(c->ctx, cb->fd, c->reader);
     if (nr < 0) {
         perrpanic("copier_read");
         return nr;
@@ -103,7 +103,7 @@ int copier_write(struct poll_cb *cb) {
         }
         return 0;
     }
-    nr = buf_write(cb->fd, c->writer);
+    nr = c->cw(c->ctx, cb->fd, c->writer);
     if (nr < 0) {
         perrpanic("copier_write");
         return nr;
@@ -120,16 +120,16 @@ static int copier_simple_writer(void *UNUSED(ctx), int fd, struct buf b) {
 }
 
 struct copier copier_add(struct poller *p, struct sourcesinkfds fds, int bufsize) {
-    return copier_add_f(p, fds, bufsize, copier_simple_reader, copier_simple_writer);
+    return copier_add_f(p, fds, bufsize, NULL, copier_simple_reader, copier_simple_writer);
 }
 
-struct copier copier_add_f(struct poller *p, struct sourcesinkfds fds, int bufsize, copier_reader cr, copier_writer cw) {
+struct copier copier_add_f(struct poller *p, struct sourcesinkfds fds, int bufsize, void *ctx, copier_reader cr, copier_writer cw) {
     unsigned char *buf1 = malloc(bufsize);
     unsigned char *buf2 = malloc(bufsize);
     struct poll_cb readercb = poll_cb_new();
     struct poll_cb writercb = poll_cb_new();
     struct copier *pc = malloc(sizeof(*pc));
-    struct copier c = { p, fds, cr, cw, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
+    struct copier c = { p, fds, ctx, cr, cw, buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
         buf_wrap(buf1, bufsize), buf_wrap(buf2, 0), 0 };
     *pc = c;
     readercb.data = pc;
