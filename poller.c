@@ -13,48 +13,48 @@ struct poller {
 };
 
 int poller_poll(struct poller *p, int ms) {
-	int rc = poll(p->pollfds, p->n, ms);
-	int i;
-	switch (rc) {
-	case EAGAIN:
-	case EFAULT:
-	case EINTR:
-	case EINVAL:
-		return 0;
-	}
-	short anyleft = 0;
-	for (i = 0; i < p->n; i++) {
-		if (p->pollfds[i].revents & POLLOUT) {
+    int rc = poll(p->pollfds, p->n, ms);
+    int i;
+    switch (rc) {
+    case EAGAIN:
+    case EFAULT:
+    case EINTR:
+    case EINVAL:
+        return 0;
+    }
+    short anyleft = 0;
+    for (i = 0; i < p->n; i++) {
+        if (p->pollfds[i].revents & POLLOUT) {
             p->cbs[i].write(&p->cbs[i]);
-			if (p->cbs[i].write == NULL) {
-				p->pollfds[i].events &= ~((short)POLLOUT);
-			}
-		}
-		if (p->pollfds[i].revents & POLLIN) {
+            if (p->cbs[i].write == NULL) {
+                p->pollfds[i].events &= ~((short)POLLOUT);
+            }
+        }
+        if (p->pollfds[i].revents & POLLIN) {
             p->cbs[i].read(&p->cbs[i]);
-			if (p->cbs[i].read == NULL) {
-				p->pollfds[i].events &= ~((short)POLLIN);
-			}
-		}
+            if (p->cbs[i].read == NULL) {
+                p->pollfds[i].events &= ~((short)POLLIN);
+            }
+        }
         if (p->cbs[i].write == NULL && p->cbs[i].read == NULL && p->cbs[i].cleanup != NULL) {
             p->cbs[i].cleanup(&p->cbs[i]);
         }
-	}
-    for (i = 0; i < p->n; i++) {
-		anyleft |= p->pollfds[i].events;
     }
-	return anyleft != 0;
+    for (i = 0; i < p->n; i++) {
+        anyleft |= p->pollfds[i].events;
+    }
+    return anyleft != 0;
 }
 
 const struct poll_cb emptycb;
 
 struct poll_cb poll_cb_new() {
-	return emptycb;
+    return emptycb;
 }
 
 struct poller *poller_new(int maxsize) {
     struct poller *p = (struct poller *) calloc(1, sizeof(struct poller) + 
-		    sizeof(struct poll_cb) * maxsize);
+            sizeof(struct poll_cb) * maxsize);
     p->pollfds = calloc(maxsize, sizeof(struct pollfd));
     p->max = maxsize;
     return p;
