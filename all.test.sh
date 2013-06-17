@@ -1,6 +1,6 @@
 #!/bin/bash
 #C_FILES=$(find . -maxdepth 1 -name \*.c|sed '/_test\.c/d;/tap\./d;/logcat\.c/d'| tr '\n' ' ')
-C_FLAGS="$C_FLAGS -ggdb -Wall -Wextra -Werror"
+C_FLAGS="$C_FLAGS -ggdb3 -Wall -Wextra -Werror"
 [ -f _main_test.c ] && rm _main_test.c
 TEST_FILES=$(find . -maxdepth 1 -name \*_test.c)
 for testfile in $TEST_FILES; do
