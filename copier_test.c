@@ -10,6 +10,9 @@
 #include "poller.h"
 #include "panic.h"
 
+#include <stdio.h>
+#include <poll.h>
+
 static void simple_copier_test() {
     int src;
     int sink;
@@ -80,22 +83,15 @@ static int buf_writer(void *_pb, int UNUSED(fd), struct buf b) {
     return b.len;
 }
 
-struct writer buf_writer_make(struct buf *pb) {
-    int devnull = open("/dev/null", O_RDONLY);
-    struct writer w = { pb, devnull, buf_writer };
-    if (devnull == -1) {
-        perrpanic("open /dev/null");
-    }
+struct writer buf_writer_make(struct buf *pb, int fd) {
+    struct writer w = { pb, fd, buf_writer };
+    if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
     return w;
 }
 
-struct reader a_reader_make(int *counter) {
-    int devzero = open("/dev/zero", O_RDONLY);
-    struct reader r = { counter, devzero, a_reader };
-    printf("dev/zero=%d\n", devzero);
-    if (devzero == -1) {
-        perrpanic("open /dev/zero");
-    }
+struct reader a_reader_make(int *counter, int fd) {
+    struct reader r = { counter, fd, a_reader };
+    if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
     return r;
 }
 
@@ -104,7 +100,12 @@ void custom_reader() {
     int counter = 13;
     char buf[1000];
     struct buf b = buf_wrap((void *)buf, 1000);
-    copier_add(p, a_reader_make(&counter), buf_writer_make(&b), 1000);
+    int pipefds[2];
+    if (pipe(pipefds) != 0) perrpanic("pipe");
+    if (fcntl(pipefds[0], F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
+    if (fcntl(pipefds[1], F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
+    if (write(pipefds[1], "z", 1) != 1) perrpanic("write asyn pipe");
+    copier_add(p, a_reader_make(&counter, pipefds[0]), buf_writer_make(&b, pipefds[1]), 1000);
     while (poller_poll(p, -1));
     ok(strcmp(buf, "aaaaaaaaaaaaa") == 0, "a_writer produced %s", buf);
     poller_delete(p);
