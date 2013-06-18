@@ -27,7 +27,7 @@ int poller_poll(struct poller *p, int ms) {
     }
     for (i = 0; i < p->n; i++) {
         if (p->pollfds[i].revents & POLLNVAL) {
-            panicf("Invalid fd %d is POLLNVAL", p->pollfds[i].fd);
+            panicf("Invalid fd %d #%d is POLLNVAL", p->pollfds[i].fd, i);
         }
         if (p->pollfds[i].revents & POLLOUT) {
             p->cbs[i].write(&p->cbs[i]);
