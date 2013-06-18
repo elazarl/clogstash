@@ -15,15 +15,20 @@ struct poller {
 int poller_poll(struct poller *p, int ms) {
     int rc = poll(p->pollfds, p->n, ms);
     int i;
-    switch (rc) {
-    case EAGAIN:
-    case EFAULT:
-    case EINTR:
-    case EINVAL:
-        return 0;
-    }
     short anyleft = 0;
+    if (rc == -1) {
+        switch (errno) {
+        case EAGAIN:
+        case EFAULT:
+        case EINTR:
+        case EINVAL:
+            return 0;
+        }
+    }
     for (i = 0; i < p->n; i++) {
+        if (p->pollfds[i].revents & POLLNVAL) {
+            panicf("Invalid fd %d is POLLNVAL", p->pollfds[i].fd);
+        }
         if (p->pollfds[i].revents & POLLOUT) {
             p->cbs[i].write(&p->cbs[i]);
             if (p->cbs[i].write == NULL) {
@@ -83,6 +88,9 @@ void poller_disable(struct poller *p, int fd) {
 }
 
 static void update_cb(struct poller *p, int i) {
+    if (p->cbs[i].read != NULL || p->cbs[i].write != NULL) {
+        p->pollfds[i].fd = p->cbs[i].fd;
+    }
     if (p->cbs[i].read != NULL) {
         p->pollfds[i].events |= (POLLIN|POLLHUP);
     }

@@ -57,11 +57,18 @@ static void emulate_full_buf() {
 
 static int a_reader(void *_count, int UNUSED(fd), struct buf b) {
     int *count = _count;
+    if (*count == 0) {
+        return 0;
+    }
     if (*count < b.len) {
-        struct buf tmp = { b.buf, *count };
-        b = tmp;
+        int c = *count;
+        *count = 0;
+        memset(b.buf, 'a', c);
+        b.buf[c] = '\0';
+        return c + 1;
     }
     memset(b.buf, 'a', b.len);
+    *count -= b.len;
     return b.len;
 }
 
@@ -85,6 +92,7 @@ struct writer buf_writer_make(struct buf *pb) {
 struct reader a_reader_make(int *counter) {
     int devzero = open("/dev/zero", O_RDONLY);
     struct reader r = { counter, devzero, a_reader };
+    printf("dev/zero=%d\n", devzero);
     if (devzero == -1) {
         perrpanic("open /dev/zero");
     }
@@ -98,7 +106,7 @@ void custom_reader() {
     struct buf b = buf_wrap((void *)buf, 1000);
     copier_add(p, a_reader_make(&counter), buf_writer_make(&b), 1000);
     while (poller_poll(p, -1));
-    ok1(strcmp(buf, "aaaaaaaaaaaaa") == 0);
+    ok(strcmp(buf, "aaaaaaaaaaaaa") == 0, "a_writer produced %s", buf);
     poller_delete(p);
 }
 
