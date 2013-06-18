@@ -104,7 +104,7 @@ void custom_reader() {
     if (pipe(pipefds) != 0) perrpanic("pipe");
     if (fcntl(pipefds[0], F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
     if (fcntl(pipefds[1], F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
-    if (write(pipefds[1], "z", 1) != 1) perrpanic("write asyn pipe");
+    if (write(pipefds[1], "z", 1) != 1) perrpanic("write asyn pipe"); /* make sure pipe never blocks */
     copier_add(p, a_reader_make(&counter, pipefds[0]), buf_writer_make(&b, pipefds[1]), 1000);
     while (poller_poll(p, -1));
     ok(strcmp(buf, "aaaaaaaaaaaaa") == 0, "a_writer produced %s", buf);

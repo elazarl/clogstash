@@ -1,0 +1,4 @@
+*.swp
+*.dSYM
+*.pyc
+_test_main.out
