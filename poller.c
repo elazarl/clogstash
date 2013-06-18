@@ -30,14 +30,17 @@ int poller_poll(struct poller *p, int ms) {
                 p->pollfds[i].events &= ~((short)POLLOUT);
             }
         }
-        if (p->pollfds[i].revents & POLLIN) {
+        if (p->pollfds[i].revents & (POLLIN|POLLHUP)) {
             p->cbs[i].read(&p->cbs[i]);
             if (p->cbs[i].read == NULL) {
-                p->pollfds[i].events &= ~((short)POLLIN);
+                p->pollfds[i].events &= ~((short)(POLLIN|POLLHUP));
             }
         }
-        if (p->cbs[i].write == NULL && p->cbs[i].read == NULL && p->cbs[i].cleanup != NULL) {
-            p->cbs[i].cleanup(&p->cbs[i]);
+        if (p->cbs[i].write == NULL && p->cbs[i].read == NULL) {
+            p->pollfds[i].fd = -1; /* linux requires fd < 0 or it returns POLLNVAL */
+            if (p->cbs[i].cleanup != NULL) {
+                p->cbs[i].cleanup(&p->cbs[i]);
+            }
         }
     }
     for (i = 0; i < p->n; i++) {
@@ -73,12 +76,15 @@ static int poller_search(struct poller *p, int fd) {
 
 void poller_disable(struct poller *p, int fd) {
     int i = poller_search(p, fd);
+    /* Linux poll(2) claims poll ignores fd < 0,
+     * Mac OS X ignores fds with no input flags */
     p->pollfds[i].events = 0;
+    p->pollfds[i].fd = -1;
 }
 
 static void update_cb(struct poller *p, int i) {
     if (p->cbs[i].read != NULL) {
-        p->pollfds[i].events |= POLLIN;
+        p->pollfds[i].events |= (POLLIN|POLLHUP);
     }
     if (p->cbs[i].write != NULL) {
         p->pollfds[i].events |= POLLOUT;
