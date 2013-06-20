@@ -1,1 +1,0 @@
-#define _ASSERT(file, line, cond, msg) if (!(cond)) printf("%s:%d: %s", msg)
