@@ -92,6 +92,13 @@ struct writer_maker constant_writer_maker_new(struct writer r) {
     return m;
 }
 
+int copier_static_maker_delete(struct poll_cb *cb) {
+    struct copier *c = (struct copier *)cb->data;
+    free(c->rm.ctx);
+    free(c->wm.ctx);
+    return copier_delete(cb);
+}
+
 struct copier copier_add(struct poller *p, struct reader r, struct writer w, int bufsize) {
     unsigned char *buf1 = malloc(bufsize);
     unsigned char *buf2 = malloc(bufsize);
@@ -111,7 +118,7 @@ struct copier copier_add(struct poller *p, struct reader r, struct writer w, int
     writercb.fd = c.w.fd;
     writercb.data = pc;
     writercb.write = copier_write;
-    writercb.cleanup = copier_delete;
+    writercb.cleanup = copier_static_maker_delete;
 
     poller_add(p, readercb);
     poller_add(p, writercb);

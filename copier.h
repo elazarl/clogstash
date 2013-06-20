@@ -20,8 +20,6 @@ struct copier {
     int closing;
 };
 
-struct sourcesinkfds sourcesink(int source, int sink);
-
 /**
  * copier_add adds to poller p functions that copies all data from fds.source to fds.sink
  */
