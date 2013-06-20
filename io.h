@@ -23,4 +23,18 @@ int writer_write(struct writer w, struct buf b);
 struct reader reader_wrap(int fd);
 struct writer writer_wrap(int fd);
 
+struct reader_maker {
+    void *ctx;
+    struct reader (*make)(void *ctx);
+};
+
+struct writer_maker {
+    void *ctx;
+    struct writer (*make)(void *ctx);
+};
+
+struct reader reader_make(struct reader_maker m);
+
+struct writer writer_make(struct writer_maker m);
+
 #endif

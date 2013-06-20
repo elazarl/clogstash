@@ -28,3 +28,12 @@ struct writer writer_wrap(int fd) {
     struct writer w = { NULL, fd, writer_write_buf };
     return w;
 }
+
+struct reader reader_make(struct reader_maker m) {
+    return m.make(m.ctx);
+}
+
+struct writer writer_make(struct writer_maker m) {
+    return m.make(m.ctx);
+}
+

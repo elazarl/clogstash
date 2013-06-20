@@ -3,13 +3,11 @@
 
 #include "io.h"
 
-struct sourcesinkfds {
-    int source;
-    int sink;
-};
-
 struct copier {
     struct poller *p;
+
+    struct reader_maker rm;
+    struct writer_maker wm;
 
     struct reader r;
     struct writer w;
