@@ -11,6 +11,9 @@
 
 int copier_delete(struct poll_cb *cb) {
     struct copier *c = (struct copier *)cb->data;
+    if (c->destroy != NULL) {
+        c->destroy(c);
+    }
     free(c->raw_reader.buf);
     free(c->raw_writer.buf);
     free(c);
@@ -92,25 +95,21 @@ struct writer_maker constant_writer_maker_new(struct writer r) {
     return m;
 }
 
-int copier_static_maker_delete(struct poll_cb *cb) {
-    struct copier *c = (struct copier *)cb->data;
+static void copier_static_maker_delete(struct copier *c) {
     free(c->rm.ctx);
     free(c->wm.ctx);
-    return copier_delete(cb);
 }
 
-struct copier copier_add(struct poller *p, struct reader r, struct writer w, int bufsize) {
+struct copier *copier_add_maker(struct poller *p, struct reader_maker rm, struct writer_maker wm, int bufsize) {
     unsigned char *buf1 = malloc(bufsize);
     unsigned char *buf2 = malloc(bufsize);
     struct poll_cb readercb = poll_cb_new();
     struct poll_cb writercb = poll_cb_new();
     struct copier *pc = malloc(sizeof(*pc));
-    struct reader_maker rm = constant_reader_maker_new(r);
-    struct writer_maker wm = constant_writer_maker_new(w);
     struct copier c = { p, rm, wm,
         reader_make(rm), writer_make(wm),
         buf_wrap(buf1, bufsize), buf_wrap(buf2, bufsize),
-        buf_wrap(buf1, bufsize), buf_wrap(buf2, 0), 0 };
+        buf_wrap(buf1, bufsize), buf_wrap(buf2, 0), 0, NULL };
     *pc = c;
     readercb.data = pc;
     readercb.fd = c.r.fd;
@@ -118,10 +117,18 @@ struct copier copier_add(struct poller *p, struct reader r, struct writer w, int
     writercb.fd = c.w.fd;
     writercb.data = pc;
     writercb.write = copier_write;
-    writercb.cleanup = copier_static_maker_delete;
+    writercb.cleanup = copier_delete;
 
     poller_add(p, readercb);
     poller_add(p, writercb);
     poller_disable(p, c.w.fd);
+    return pc;
+}
+
+struct copier *copier_add(struct poller *p, struct reader r, struct writer w, int bufsize) {
+    struct reader_maker rm = constant_reader_maker_new(r);
+    struct writer_maker wm = constant_writer_maker_new(w);
+    struct copier *c = copier_add_maker(p, rm, wm, bufsize);
+    c->destroy = copier_static_maker_delete;
     return c;
 }
