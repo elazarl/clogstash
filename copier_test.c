@@ -26,7 +26,7 @@ static void simple_copier_test() {
     if (sink < 0) {
         perrpanic("open dst");
     }
-    copier_add(p, reader_make(src), writer_make(sink), 1000);
+    copier_add(p, reader_wrap(src), writer_wrap(sink), 1000);
     while (poller_poll(p, -1));
     ok1(system("[ \"`cat /tmp/test_copier_out`\" = 'bobo' ]") == 0);
     system("rm /tmp/test_copier /tmp/test_copier_out");
@@ -48,7 +48,7 @@ static void emulate_full_buf() {
     if (sink < 0) {
         perrpanic("open dst");
     }
-    copier_add(p, reader_make(src), writer_make(sink), 1000);
+    copier_add(p, reader_wrap(src), writer_wrap(sink), 1000);
     while (poller_poll(p, -1));
     ok1(system("A=\"`cat /tmp/test_copier_full_buf_out`\";"
                " [ \"$A\" = '1234567890abcdefghijklmnopqrstuvwxyz' ] || (echo $A;false)") == 0);

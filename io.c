@@ -19,12 +19,12 @@ static int writer_write_buf(void *UNUSED(ctx), int fd, struct buf b) {
     return buf_write(fd, b);
 }
 
-struct reader reader_make(int fd) {
+struct reader reader_wrap(int fd) {
     struct reader r = { NULL, fd, reader_read_buf };
     return r;
 }
 
-struct writer writer_make(int fd) {
+struct writer writer_wrap(int fd) {
     struct writer w = { NULL, fd, writer_write_buf };
     return w;
 }

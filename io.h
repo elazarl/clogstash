@@ -20,7 +20,7 @@ struct writer {
 int reader_read(struct reader r, struct buf b);
 int writer_write(struct writer w, struct buf b);
 
-struct reader reader_make(int fd);
-struct writer writer_make(int fd);
+struct reader reader_wrap(int fd);
+struct writer writer_wrap(int fd);
 
 #endif
