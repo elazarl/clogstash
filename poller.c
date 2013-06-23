@@ -4,10 +4,12 @@
 #include <errno.h>
 #include "panic.h"
 #include "poller.h"
+#include "poller_event.h"
 
 struct poller {
     int max;
     int n;
+    struct poller_events *events;
     struct pollfd *pollfds;
     struct poll_cb cbs[];
 };
@@ -63,6 +65,7 @@ struct poll_cb poll_cb_new() {
 struct poller *poller_new(int maxsize) {
     struct poller *p = (struct poller *) calloc(1, sizeof(struct poller) + 
             sizeof(struct poll_cb) * maxsize);
+    p->events = poller_events_new(maxsize);
     p->pollfds = calloc(maxsize, sizeof(struct pollfd));
     p->max = maxsize;
     return p;
@@ -119,6 +122,12 @@ void poller_add(struct poller *p, struct poll_cb cb) {
 
 void poller_delete(struct poller *p) {
     free(p->pollfds);
+    free(p->events);
     free(p);
 }
 
+void poller_change_fd(struct poller *p, int oldfd, int newfd) {
+    int i = poller_search(p, oldfd);
+    p->cbs[i].fd = newfd;
+    p->pollfds[i].fd = newfd;
+}

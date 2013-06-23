@@ -54,4 +54,9 @@ void poller_disable(struct poller *p, int fd);
  */
 void poller_enable(struct poller *p, int fd);
 
+/**
+ * poller_replace_fd will change the filedescriptor of this particular event.
+ */
+void poller_change_fd(struct poller *p, int oldfd, int newfd);
+
 #endif
