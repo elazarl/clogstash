@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <errno.h>
@@ -11,9 +12,13 @@ static void dopanic(char *msg) {
     if (onpanic != NULL) {
         onpanic(msg);
     } else {
+        char systembuf[100];
         fputs(msg, stderr);
         fputs("\n", stderr);
         fflush(stderr);
+        snprintf(systembuf, sizeof(systembuf), "echo 'attach %d\nbt'|gdb", getpid());
+        systembuf[sizeof(systembuf)-1] = '\0';
+        system(systembuf);
         exit(1);
     }
 }
