@@ -1,5 +1,6 @@
 #ifndef __H_POLLER_EVENT_
 #define __H_POLLER_EVENT_
+#include <sys/time.h>
 
 /**
  * poller_event describes an event that should happen in the future.
@@ -8,7 +9,7 @@
  * action should happen.
  */
 struct poller_event {
-    int ms;
+    struct timespec ts;
     void *ctx;
     void (*action)(void *ctx);
 };
@@ -37,5 +38,15 @@ struct poller_event poller_events_pop(struct poller_events *list);
  * poller_event_pop returns the event with earliest schedule time.
  */
 struct poller_event poller_events_peek(struct poller_events *list);
+
+/**
+ * timespec_cmp compares two struct timespec
+ */
+int timespec_cmp(struct timespec rhs, struct timespec lhs);
+
+/**
+ * poller_event_do executes the event
+ */
+void poller_event_do(struct poller_event evt);
 
 #endif

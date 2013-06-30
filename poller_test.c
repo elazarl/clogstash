@@ -55,7 +55,7 @@ int mylistener_write(struct poll_cb *cb) {
 static const struct readpoller emptyreadpoller;
 static const struct writepoller emptywritepoller;
 
-void test1() {
+static void test1() {
     struct poller *p = poller_new(100);
     int pipefds[2];
     struct readpoller rl = emptyreadpoller;
@@ -86,6 +86,30 @@ void test1() {
     }
 }
 
+static int socket_closed = 0;
+
+static void close_socket(void *ctx) {
+    int *socket = ctx;
+    socket_closed = 1;
+    close(*socket);
+}
+
+static void testEventScheduling() {
+    struct poller *p = poller_new(100);
+    int pipefds[2];
+    struct poll_cb rcb = poll_cb_new();
+    if (pipe(pipefds) != 0) perrpanic("pipe");
+    if (fcntl(pipefds[0], F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
+    if (fcntl(pipefds[1], F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
+    rcb.fd = pipefds[0];
+    poller_schedule(p, timespec_ms(10), &pipefds[0], close_socket);
+    poller_add(p, rcb);
+    while(poller_poll(p, -1));
+    poller_delete(p);
+    ok(socket_closed, "scheduling socket_close event worked");
+}
+
 void poller_test() {
     test1();
+    testEventScheduling();
 }

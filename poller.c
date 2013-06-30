@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -5,8 +6,12 @@
 #include "panic.h"
 #include "poller.h"
 #include "poller_event.h"
+#include "clock_gettime.h"
+#include "timespec.h"
+#include "helpers.h"
 
 struct poller {
+    struct timespec now;
     int max;
     int n;
     struct poller_events *events;
@@ -15,9 +20,25 @@ struct poller {
 };
 
 int poller_poll(struct poller *p, int ms) {
-    int rc = poll(p->pollfds, p->n, ms);
+    int rc;
     int i;
     short anyleft = 0;
+    if (p->events->n > 0) {
+        struct timespec ts = poller_events_peek(p->events).ts;
+        ts = timespec_sub(ts, p->now);
+        ms = timespec_as_ms(ts);
+    }
+    rc = poll(p->pollfds, p->n, ms);
+    clock_gettime(CLOCK_MONOTONIC, &p->now);
+    while (p->events->n > 0) {
+        struct poller_event evt = poller_events_peek(p->events);
+        if (timespec_cmp(evt.ts, p->now) < 0) {
+            poller_event_do(evt);
+            poller_events_pop(p->events);
+        } else {
+            break;
+        }
+    }
     if (rc == -1) {
         switch (errno) {
         case EAGAIN:
@@ -65,6 +86,7 @@ struct poll_cb poll_cb_new() {
 struct poller *poller_new(int maxsize) {
     struct poller *p = (struct poller *) calloc(1, sizeof(struct poller) + 
             sizeof(struct poll_cb) * maxsize);
+    clock_gettime(CLOCK_MONOTONIC, &p->now);
     p->events = poller_events_new(maxsize);
     p->pollfds = calloc(maxsize, sizeof(struct pollfd));
     p->max = maxsize;
@@ -130,4 +152,10 @@ void poller_change_fd(struct poller *p, int oldfd, int newfd) {
     int i = poller_search(p, oldfd);
     p->cbs[i].fd = newfd;
     p->pollfds[i].fd = newfd;
+}
+
+void poller_schedule(struct poller *p, struct timespec ts_delta, void *ctx, void (*action)()) {
+    struct timespec ts = timespec_add(p->now, ts_delta);
+    struct poller_event evt = { ts, ctx, action };
+    poller_events_add(p->events, evt);
 }

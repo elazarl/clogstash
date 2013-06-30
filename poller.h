@@ -1,8 +1,7 @@
 #ifndef __H_POLLER_
 #define __H_POLLER_
 
-#define POLLER_DEL 0
-#define POLLER_KEEP 1
+#include "timespec.h"
 
 struct poll_cb {
     int fd;
@@ -59,4 +58,5 @@ void poller_enable(struct poller *p, int fd);
  */
 void poller_change_fd(struct poller *p, int oldfd, int newfd);
 
+void poller_schedule(struct poller *p, struct timespec ts_delta, void *ctx, void (*action)());
 #endif
