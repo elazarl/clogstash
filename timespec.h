@@ -17,7 +17,7 @@ void set_normalized_timespec(struct timespec *ts, time_t sec, long long nsec);
  * timespec_as_ms converts the timespec to the number of milliseconds
  * In case of overflow - it'll panic.
  */
-long long timespec_as_ms(struct timespec ts);
+int64_t timespec_as_ms(struct timespec ts);
 
 void print_timespec(struct timespec ts);
 #endif
