@@ -60,7 +60,12 @@ ssize_t read_ascii_mock(int fildes, void *buf, size_t nbyte) {
 }
 
 void mock_read_fildes(int fildes, char *data, int experrno) {
-    struct fildes2mock m = { fildes, data, experrno, strlen(data) + 1 };
+    struct fildes2mock m = { fildes, data, experrno, 0 };
+    if (data == NULL) {
+        m.size = 0;
+    } else {
+        m.size = strlen(data) + 1;
+    }
     mock_read = read_ascii_mock;
     if (nfildes2mock == FILDES2MOCK) panic("too much filedes mocks");
     fildes2mock_array[nfildes2mock] = m;
@@ -97,11 +102,20 @@ void read_parts_test() {
             break;
         }
     }
-    ok(memcmp(mock_data, b, strlen(mock_data) + 1) == 0, "expected:\n%s\nread:\n%s", mock_data, b);
+    ok(memcmp(mock_data, b, strlen(mock_data) + 1) == 0, "expected:\n\t%s\n\tread:\n\t%s", mock_data, b);
+}
+
+void read_error_test() {
+    int mocked_fildes = 17;
+    mock_read_fildes(mocked_fildes, NULL, EIO);
+    char b[100];
+    ok1(-1 == read(mocked_fildes, b, sizeof(b)));
+    ok1(errno == EIO);
 }
 
 void mock_test() {
     read_all_test();
     read_parts_test();
+    read_error_test();
     mock_read_destroy();
 }
