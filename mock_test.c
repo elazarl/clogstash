@@ -1,7 +1,9 @@
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <fcntl.h>
 #include "mock_test.h"
 #include "panic.h"
 #include "tap.h"
@@ -72,7 +74,57 @@ void mock_read_fildes(int fildes, char *data, int experrno) {
     nfildes2mock++;
 }
 
-void mock_read_destroy() {
+int orig_open(const char *path, int oflag, ...) {
+    static open_func orig_open_func = NULL;
+    if (orig_open_func == NULL) {
+        orig_open_func = dlsym(RTLD_NEXT, "open");
+    }
+    if (oflag | O_CREAT) {
+        va_list ap;
+        int mask;
+        va_start(ap, oflag);
+        mask = va_arg(ap, int);
+        va_end(ap);
+        return orig_open_func(path, oflag, mask);
+    }
+    return orig_open_func(path, oflag);
+}
+
+static open_func mock_open = NULL;
+int open(const char *path, int oflag, ...) {
+    int mask;
+    if (oflag | O_CREAT) {
+        va_list ap;
+        va_start(ap, oflag);
+        mask = va_arg(ap, int);
+        va_end(ap);
+    }
+    if (mock_open == NULL) {
+        return (oflag | O_CREAT) ? orig_open(path, oflag, mask) : orig_open(path, oflag);
+    }
+    return (oflag | O_CREAT) ? mock_open(path, oflag, mask) : orig_open(path, oflag);
+}
+
+struct mock_open_table {
+    char *path;
+    int fildes;
+    int experrno;
+};
+
+#define OPEN_TABLE_SIZE 1000
+struct mock_open_table open_table[OPEN_TABLE_SIZE];
+int open_table_size = 0;
+
+void mock_open_path(char *path, int fildes, int experrno) {
+    struct mock_open_table cell = { path, fildes, experrno };
+    if (open_table_size == OPEN_TABLE_SIZE) {
+        panic("overflow at open_table");
+    }
+    open_table[open_table_size] = cell;
+    open_table_size++;
+}
+
+void mock_destroy() {
     mock_read = NULL;
 }
 
@@ -117,5 +169,5 @@ void mock_test() {
     read_all_test();
     read_parts_test();
     read_error_test();
-    mock_read_destroy();
+    mock_destroy();
 }
