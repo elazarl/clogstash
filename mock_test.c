@@ -5,6 +5,7 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include "mock_test.h"
+#include "helpers.h"
 #include "panic.h"
 #include "tap.h"
 
@@ -115,8 +116,23 @@ struct mock_open_table {
 struct mock_open_table open_table[OPEN_TABLE_SIZE];
 int open_table_size = 0;
 
+int open_from_table(const char *path, int UNUSED(oflag), ...) {
+    int i = 0;
+    for (; i < open_table_size; i++) {
+        if (strcmp(open_table[i].path, path) == 0) {
+            if (open_table[i].experrno != 0) {
+                errno = open_table[i].experrno;
+            }
+            return open_table[i].fildes;
+        }
+    }
+    panicf("Cannot find path %s", path);
+    return -1;
+}
+
 void mock_open_path(char *path, int fildes, int experrno) {
     struct mock_open_table cell = { path, fildes, experrno };
+    mock_open = open_from_table;
     if (open_table_size == OPEN_TABLE_SIZE) {
         panic("overflow at open_table");
     }
@@ -165,9 +181,19 @@ void read_error_test() {
     ok1(errno == EIO);
 }
 
+void open_test() {
+    int actual;
+    mock_open_path("/nowhere", 42, 0);
+    actual = open("/nowhere", O_CREAT, 0777);
+    ok(actual == 42, "expected 42 got %d", actual);
+    actual = open("/nowhere", O_RDONLY);
+    ok(actual == 42, "expected 42 got %d", actual);
+}
+
 void mock_test() {
     read_all_test();
     read_parts_test();
     read_error_test();
+    open_test();
     mock_destroy();
 }
