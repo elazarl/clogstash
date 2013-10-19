@@ -34,7 +34,8 @@ for testfile in $TEST_FILES; do
         echo "if (test_relevant(\"$TESTFUN\")) $TESTFUN();" >> _main_test.c
 done
 echo 'return exit_status();}' >> _main_test.c
-gcc $C_FLAGS $(python ./files.py tests)  -o _test_main.out|| exit -1
+[ "$OSTYPE" == "linux-gnu" ] && EXTRA_LIB="-ldl"
+gcc $C_FLAGS $(python ./files.py tests) $EXTRA_LIB -o _test_main.out|| exit -1
 BASENAME="$(basename $0)"
 if [ "$BASENAME" != "all.test.sh" ]; then
 	RUNWITH=${BASENAME%%.test.sh}

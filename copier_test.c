@@ -83,13 +83,13 @@ static int buf_writer(void *_pb, int UNUSED(fd), struct buf b) {
     return b.len;
 }
 
-struct writer buf_writer_make(struct buf *pb, int fd) {
+static struct writer buf_writer_make(struct buf *pb, int fd) {
     struct writer w = { pb, fd, buf_writer };
     if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
     return w;
 }
 
-struct reader a_reader_make(int *counter, int fd) {
+static struct reader a_reader_make(int *counter, int fd) {
     struct reader r = { counter, fd, a_reader };
     if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) perrpanic("fcntl");
     return r;
@@ -112,8 +112,8 @@ void custom_reader() {
 }
 
 void copier_test() {
-    if (0) {simple_copier_test();
-    emulate_full_buf();}
+    simple_copier_test();
+    emulate_full_buf();
     custom_reader();
 }
 

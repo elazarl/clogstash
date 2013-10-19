@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "buf.h"
 #include "panic.h"
@@ -34,11 +35,15 @@ struct buf buf_copy(struct buf b) {
     return rv;
 }
 
-struct buf buf_wrap(unsigned char *b, int len) {
+struct buf buf_wrap(char *b, int len) {
     struct buf rv = { b, len };
     return rv;
 }
 
 int buf_empty(struct buf b) {
     return b.len == 0;
+}
+
+struct buf buf_from_str(char *s) {
+    return buf_wrap(s, strlen(s));
 }
