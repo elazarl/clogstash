@@ -14,11 +14,11 @@ void poller_events_delete(struct poller_events *list) {
     free(list);
 }
 
-int timespec_cmp(struct timespec rhs, struct timespec lhs) {
-    if (rhs.tv_sec == lhs.tv_sec) {
-        return rhs.tv_nsec - lhs.tv_nsec;
+int timespec_cmp(struct timespec lhs, struct timespec rhs) {
+    if (lhs.tv_sec == rhs.tv_sec) {
+        return lhs.tv_nsec - rhs.tv_nsec;
     }
-    return rhs.tv_sec - lhs.tv_sec;
+    return lhs.tv_sec - rhs.tv_sec;
 }
 
 static int sort_by_ts(const void *lhs, const void *rhs) {
