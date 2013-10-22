@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #ifndef NSEC_PER_SEC
-#define NSEC_PER_SEC 1000000
+#define NSEC_PER_SEC 1000000000
 #endif
 
 struct timespec timespec_seconds(int v);
