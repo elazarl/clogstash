@@ -7,12 +7,20 @@ struct timespec timespec_seconds(int v) {
     struct timespec ts = { v, 0 };
     return ts;
 }
+
 struct timespec timespec_ms(int v) {
-    struct timespec ts = { 0, 1000000 * v };
+    /* TODO: think if we want to make it faster.
+     * we probably don't really want to do that.
+     */
+    struct timespec ts = { v/1000, 1000000 * (v%1000) };
     return ts;
 }
 struct timespec timespec_us(int v) {
-    struct timespec ts = { 0, 1000 * v };
+    struct timespec ts = { v/(1000*1000), 1000 * (v%(1000*1000)) };
+    return ts;
+}
+struct timespec timespec_ns(int v) {
+    struct timespec ts = { 0, v };
     return ts;
 }
 /* stolen from the linux kernel, I tried to make it as less performant as possible
