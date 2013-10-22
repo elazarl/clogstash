@@ -8,11 +8,11 @@ struct timespec timespec_seconds(int v) {
     return ts;
 }
 struct timespec timespec_ms(int v) {
-    struct timespec ts = { 0, 1000 * v };
+    struct timespec ts = { 0, 1000000 * v };
     return ts;
 }
 struct timespec timespec_us(int v) {
-    struct timespec ts = { 0, v };
+    struct timespec ts = { 0, 1000 * v };
     return ts;
 }
 /* stolen from the linux kernel, I tried to make it as less performant as possible
@@ -56,7 +56,7 @@ int64_t timespec_as_ms(struct timespec ts) {
     if (ts.tv_sec >= (INT64_MAX / 1000L)) {
         panic("conversion of timespec overflows");
     }
-    return (int64_t)ts.tv_sec*1000 + ts.tv_nsec/1000;
+    return (int64_t)ts.tv_sec*1000 + ts.tv_nsec/1000000;
 }
 
 void print_timespec(struct timespec ts) {
