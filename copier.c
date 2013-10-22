@@ -101,8 +101,8 @@ static void copier_static_maker_delete(struct copier *c) {
 }
 
 struct copier *copier_add_maker(struct poller *p, struct reader_maker rm, struct writer_maker wm, int bufsize) {
-    char *buf1 = malloc(bufsize);
-    char *buf2 = malloc(bufsize);
+    unsigned char *buf1 = malloc(bufsize);
+    unsigned char *buf2 = malloc(bufsize);
     struct poll_cb readercb = poll_cb_new();
     struct poll_cb writercb = poll_cb_new();
     struct copier *pc = malloc(sizeof(*pc));

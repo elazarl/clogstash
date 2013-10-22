@@ -25,26 +25,16 @@ struct writer writer_wrap(int fd);
 
 struct reader_maker {
     void *ctx;
-    struct reader_or_error (*make)(void *ctx);
-};
-
-struct reader_or_error {
-    int error;
-    struct reader reader;
+    struct reader (*make)(void *ctx);
 };
 
 struct writer_maker {
     void *ctx;
-    struct writer_or_error (*make)(void *ctx);
+    struct writer (*make)(void *ctx);
 };
 
-struct writer_or_error {
-    int error;
-    struct writer writer;
-};
+struct reader reader_make(struct reader_maker m);
 
-struct reader_or_error reader_make(struct reader_maker m);
-
-struct writer_or_error writer_make(struct writer_maker m);
+struct writer writer_make(struct writer_maker m);
 
 #endif
