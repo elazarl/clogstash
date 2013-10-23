@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     argv_parse(argc, argv, args);
     outputfile = argv_get(args, "--output");
 
-    if (open(outputfile, O_APPEND | O_WRONLY) == -1) {
+    if (open(outputfile, O_CREAT|O_APPEND|O_WRONLY, S_IRUSR|S_IWUSR|S_IRGRP) == -1) {
         perrpanic("open");
     }
 
