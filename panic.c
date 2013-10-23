@@ -16,7 +16,7 @@ static void dopanic(char *msg) {
         fputs(msg, stderr);
         fputs("\n", stderr);
         fflush(stderr);
-        snprintf(systembuf, sizeof(systembuf), "export T=$(mktemp /tmp/clogcat.XXXXXX);echo 'attach %d\nbt\nquit' >$T; gdb -quiet _test_main.out <$T; rm $T", getpid());
+        snprintf(systembuf, sizeof(systembuf), "export T=$(mktemp /tmp/clogcat.XXXXXX);echo 'attach %d\nbt\nquit' >$T; gdb -quiet _test_main.out -x $T; rm $T", getpid());
         systembuf[sizeof(systembuf)-1] = '\0';
         system(systembuf);
         exit(1);
