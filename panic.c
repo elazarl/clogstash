@@ -12,11 +12,11 @@ static void dopanic(char *msg) {
     if (onpanic != NULL) {
         onpanic(msg);
     } else {
-        char systembuf[100];
+        char systembuf[200];
         fputs(msg, stderr);
         fputs("\n", stderr);
         fflush(stderr);
-        snprintf(systembuf, sizeof(systembuf), "echo 'attach %d\nbt'|gdb", getpid());
+        snprintf(systembuf, sizeof(systembuf), "export T=$(mktemp /tmp/clogcat.XXXXXX);echo 'attach %d\nbt\nquit' >$T; gdb -quiet _test_main.out <$T; rm $T", getpid());
         systembuf[sizeof(systembuf)-1] = '\0';
         system(systembuf);
         exit(1);
