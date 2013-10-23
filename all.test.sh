@@ -34,7 +34,7 @@ for testfile in $TEST_FILES; do
         echo "if (test_relevant(\"$TESTFUN\")) $TESTFUN();" >> _main_test.c
 done
 echo 'return exit_status();}' >> _main_test.c
-[ "$OSTYPE" == "linux-gnu" ] && EXTRA_LIB="-ldl"
+[ "$OSTYPE" == "linux-gnu" ] && EXTRA_LIB="-ldl -lrt"
 gcc $C_FLAGS $(python ./files.py tests) $EXTRA_LIB -o _test_main.out|| exit -1
 BASENAME="$(basename $0)"
 if [ "$BASENAME" != "all.test.sh" ]; then
